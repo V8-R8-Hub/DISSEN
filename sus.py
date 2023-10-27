@@ -1,6 +1,7 @@
 # psycopg2 is a database driver allowing CPython to access PostgreSQL
 import psycopg2
 
+import re
 
 # pygrametl's __init__ file provides a set of helper functions and more
 # importantly the class ConnectionWrapper for wrapping PEP 249 connections
@@ -90,12 +91,16 @@ def CreateProductDim(product_source):
     product_dict = {}
     for row in product_source:
         datasetrow = {}
-        datasetrow['product_name'] = row['name']
+        datasetrow['product_name'] = parseName(row['name'])
         datasetrow['alcohol_ml'] = int(Decimal(row['alcohol_content_ml'])*1000)
         datasetrow['price'] = int(row['price'])
         datasetrow['product_id'] = product_dim.ensure(datasetrow)
         product_dict[row['id']] = datasetrow
     return product_dict
+
+def parseName(name):
+    return re.sub('<[^>]+>','',name)
+
 
 def CreateSalesForTime(sale_source):
   
