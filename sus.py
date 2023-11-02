@@ -1,4 +1,5 @@
 # psycopg2 is a database driver allowing CPython to access PostgreSQL
+import dateutil.parser
 import psycopg2
 
 import re
@@ -30,7 +31,7 @@ dw_conn_wrapper = pygrametl.ConnectionWrapper(connection=dw_conn);
 time_dim = CachedDimension(
         name='time_dim',
         key='time_id',
-        attributes=['year','quarter','month','day']
+        attributes=['year','quarter','month','day','weekday']
     )
 
 
@@ -107,8 +108,9 @@ def CreateSalesForTime(sale_source):
     timeSalesDict = {}
     for row in sale_source:
 
-        sale_date = row['timestamp'].split(" ")[0].split("-")
-        key = f'{sale_date[0]}-{sale_date[1]}-{sale_date[2]}-{row["product_id"]}-{row["member_id"]}'
+        sale_date = dateutil.parser.isoparse(row['timestamp'])
+        
+        key = f'{sale_date.month}-{sale_date.year}-{sale_date.day}-{row["product_id"]}-{row["member_id"]}'
         if key not in timeSalesDict:
 
             row['quantity'] = 1
@@ -123,10 +125,12 @@ def CreateSalesForTime(sale_source):
 
 def CreateTimeDim(sale_date):
     time_obj = {}
-    time_obj['year'] = int(sale_date[0])
-    time_obj['quarter'] = (int(sale_date[1])-1)//3 + 1
-    time_obj['month'] = int(sale_date[1])
-    time_obj['day'] = int(sale_date[2])
+    time_obj['year'] = int(sale_date.year)
+    time_obj['quarter'] = (int(sale_date.month)-1)//3 + 1
+    time_obj['month'] = int(sale_date.month)
+    time_obj['day'] = int(sale_date.day)
+    time_obj['weekday'] = sale_date.weekday()
+    
     time_obj['time_id'] = time_dim.ensure(time_obj)
     return time_obj
     
